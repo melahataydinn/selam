@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Minik Romantik Oyun 💘</title>
+<style>
+  :root{
+    --bg1:#1b1b2f; --bg2:#3a1c71; --bg3:#d76d77; --bg4:#ffaf7b;
+    --pink:#ff78a6; --hot:#ff4d7e; --gold:#ffd166; --mint:#b8f2e6; --white:#fff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  body{
+    background: radial-gradient(1200px 700px at 70% -10%, #ffffff10, transparent 60%),
+                linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
+    color:var(--white); display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .app{width:min(920px,96vw); height:min(640px,92vh); position:relative; border-radius:22px;
+       background:#00000033; border:1px solid #ffffff22; backdrop-filter: blur(8px);
+       overflow:hidden; box-shadow:0 20px 60px #00000070}
+  header{
+    position:absolute; inset:0 auto auto 0; width:100%; padding:16px 20px;
+    display:flex; align-items:center; justify-content:space-between; pointer-events:none;
+  }
+  header .title{font-weight:700; letter-spacing:.5px; text-shadow:0 2px 10px #00000080}
+  header .step{opacity:.8; font-size:14px}
+  .screen{position:absolute; inset:0; display:none; padding:28px; gap:18px}
+  .screen.active{display:grid; grid-template-rows:auto 1fr auto}
+  .card{
+    border:1px solid #ffffff24; background:#ffffff08; border-radius:18px; padding:18px;
+    box-shadow: inset 0 0 0 1px #ffffff14;
+  }
+  .center{display:flex; align-items:center; justify-content:center}
+  .btn{
+    appearance:none; border:0; padding:12px 18px; border-radius:12px; font-weight:700;
+    background:linear-gradient(135deg,var(--pink),var(--hot)); color:#fff; cursor:pointer;
+    box-shadow:0 10px 20px #ff4d7e55; transition:transform .1s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .ghost{background:transparent; border:1px solid #ffffff35; box-shadow:none}
+  .muted{opacity:.75}
+  .hearts-area{ position:relative; overflow:hidden; border-radius:14px; height:100%}
+  .heart{
+    position:absolute; font-size:28px; cursor:pointer; user-select:none;
+    animation: floatY 3.8s ease-in-out infinite;
+    filter: drop-shadow(0 4px 12px #ff4d7e66);
+  }
+  @keyframes floatY{ 0%{transform:translateY(10px)} 50%{transform:translateY(-18px)} 100%{transform:translateY(10px)} }
+  .stats{display:flex; gap:12px; align-items:center; justify-content:center; font-weight:700}
+  .progress{height:10px; border-radius:999px; background:#ffffff22; overflow:hidden}
+  .progress > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold),var(--mint))}
+  /* Balloon game */
+  .balloon-wrap{display:flex; align-items:center; justify-content:center; height:100%; position:relative}
+  .balloon{
+    width:120px; aspect-ratio: 3/4; border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+    background: radial-gradient(circle at 40% 30%, #ffffff77 0 18%, transparent 20% 100%),
+                linear-gradient(135deg, #ff9ec0, #ff4d7e);
+    box-shadow: 0 20px 60px #ff4d7e55; transform:scale(1); transition: transform .08s linear;
+    position:relative;
+  }
+  .balloon:after{
+    content:""; position:absolute; width:10px; height:10px; background:#ff4d7e; bottom:-6px; left:50%; transform:translateX(-50%) rotate(45deg);
+  }
+  .string{ position:absolute; top:calc(50% + 90px); width:2px; height:120px; background:#ffffff45; }
+  .puff-btn{font-size:18px}
+  .meter{font-weight:700; text-align:center}
+  /* Star game */
+  .sky{ position:relative; height:100%; background: linear-gradient(180deg, #0d1b2a, #1b263b, #415a77); overflow:hidden;}
+  .star{
+    position:absolute; font-size:24px; cursor:pointer; user-select:none; color:#ffffffaa;
+    transition: color .2s ease; filter: drop-shadow(0 0 10px #ffffff55);
+  }
+  .star.lit{ color:#ffd166; filter: drop-shadow(0 0 15px #ffd16688); }
+  .typewriter{font-size:clamp(22px, 3.4vw, 34px); font-weight:800; text-align:center; line-height:1.35}
+  .cursor{ display:inline-block; width:1ch; animation: blink 1s steps(1) infinite}
+  @keyframes blink{50%{color:transparent}}
+  /* confetti-ish */
+  .spark{ position:absolute; width:8px; height:8px; background:#ffd166; border-radius:50%; opacity:.9; pointer-events:none; mix-blend-mode:screen}
+  .burst-heart{ position:absolute; font-size:24px; pointer-events:none; filter: drop-shadow(0 4px 12px #ff4d7e66); }
+  .fade{ animation: fadeOut .7s forwards }
+  @keyframes fadeOut{ to{opacity:0; transform:translateY(-10px) scale(.8)} }
+  /* small helpers */
+  .grid{display:grid; gap:14px}
+  .right{justify-self:end}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="title">💖 Minik Romantik Yolculuk</div>
+    <div class="step" id="stepInfo">Adım 1/3</div>
+  </header>
+
+  <!-- INTRO -->
+  <section class="screen active" id="intro">
+    <div class="card">
+      <h2 style="margin:10px 0 6px">Hazır mısın? 🫶</h2>
+      <p class="muted" style="margin:0">
+        Küçük bir oyun oynayalım. En sonunda sana söylemek istediğim şeyi fısıldayacağım…
+      </p>
+    </div>
+    <div class="card center" style="min-height:260px">
+      <div class="grid" style="text-align:center">
+        <div style="font-size:52px">💕✨</div>
+        <p class="muted">Kalpleri topla → Balonu şişir → Yıldızları yak</p>
+        <button class="btn" id="startBtn">Başla</button>
+      </div>
+    </div>
+    <div class="grid">
+      <button class="btn ghost right" id="skipAll" title="(İstersen atlayabilirsin)">Doğrudan mesaja git</button>
+    </div>
+  </section>
+
+  <!-- GAME 1: HEART CATCH -->
+  <section class="screen" id="hearts">
+    <div class="card">
+      <strong>Adım 1 • Kalpleri Yakala</strong>
+      <p class="muted" style="margin:.4rem 0 0">Ekranda beliren <b id="needCount">10</b> kalbe dokun/click yap 🩷</p>
+    </div>
+    <div class="card hearts-area" id="heartsArea" aria-label="Kalpler alanı"></div>
+    <div class="grid">
+      <div class="stats">
+        <span>Toplanan: <b id="got">0</b></span>
+        <div style="flex:1"></div>
+        <div class="progress" style="width:50%">
+          <i id="bar"></i>
+        </div>
+      </div>
+      <button class="btn right" id="toBalloon" disabled>Devam ➜</button>
+    </div>
+  </section>
+
+  <!-- GAME 2: BALLOON INFLATE -->
+  <section class="screen" id="balloon">
+    <div class="card">
+      <strong>Adım 2 • Balonu Şişir</strong>
+      <p class="muted" style="margin:.4rem 0 0">Butona basılı tut (veya boşluk tuşuna basılı tut). Yeterince şişince patlayacak! 🎈</p>
+    </div>
+    <div class="card center" style="min-height:260px">
+      <div class="balloon-wrap">
+        <div class="balloon" id="balloonEl" aria-label="Balon"></div>
+        <div class="string"></div>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="meter">Basınç: <b id="pressure">0%</b></div>
+      <div class="center" style="gap:12px">
+        <button class="btn puff-btn" id="puffBtn">Üfle 🫧</button>
+        <button class="btn ghost" id="toStars" disabled>Devam ➜</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME 3: LIGHT STARS -->
+  <section class="screen" id="stars">
+    <div class="card">
+      <strong>Adım 3 • Yıldızları Yak, yine de benim için enn parlak yıldız sensinn</strong>
+      <p class="muted" style="margin:.4rem 0 0">Gökyüzünde beliren <b id="starNeedCount">8</b> yıldıza dokun/click yap ✨</p>
+    </div>
+    <div class="card sky" id="starArea" aria-label="Yıldız alanı"></div>
+    <div class="grid">
+      <div class="stats">
+        <span>Yakılan: <b id="starGot">0</b></span>
+        <div style="flex:1"></div>
+        <div class="progress" style="width:50%">
+          <i id="starBar"></i>
+        </div>
+      </div>
+      <button class="btn right" id="revealBtn" disabled>Mesajı Göster ✨</button>
+    </div>
+  </section>
+
+  <!-- ENDING -->
+  <section class="screen" id="final">
+    <div class="card center" style="min-height:100%">
+      <div class="typewriter" aria-live="polite" id="tw"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  const $ = (s, p=document)=>p.querySelector(s);
+  const $$ = (s, p=document)=>[...p.querySelectorAll(s)];
+  const screens = {
+    intro: $('#intro'), hearts: $('#hearts'), balloon: $('#balloon'),
+    stars: $('#stars'), final: $('#final')
+  };
+  const stepInfo = $('#stepInfo');
+  function show(id){
+    Object.values(screens).forEach(sc=>sc.classList.remove('active'));
+    screens[id].classList.add('active');
+    stepInfo.textContent = ({
+      intro:'Adım 0/3',
+      hearts:'Adım 1/3',
+      balloon:'Adım 2/3',
+      stars:'Adım 3/3',
+      final:'✨'
+    })[id] || '';
+  }
+
+  // Intro events
+  $('#startBtn').addEventListener('click', ()=>{ show('hearts'); spawnHearts(); });
+  $('#skipAll').addEventListener('click', ()=>{ typeWriteEnding(); });
+
+  /* ---------- GAME 1: HEARTS ---------- */
+  const heartsArea = $('#heartsArea');
+  const need = 10; let got = 0; let heartTimer;
+  $('#needCount').textContent = need;
+  function spawnHearts(){
+    heartsArea.innerHTML = '';
+    got = 0; $('#got').textContent = got; $('#bar').style.width = '0%';
+    $('#toBalloon').disabled = true;
+    clearInterval(heartTimer);
+    heartTimer = setInterval(()=>{
+      if($$('.heart', heartsArea).length > 10) return;
+      const h = document.createElement('div');
+      h.className='heart'; h.textContent = Math.random()>.6 ? '💖':'💘';
+      const x = Math.random()*(heartsArea.clientWidth-40);
+      const y = Math.random()*(heartsArea.clientHeight-80)+10;
+      h.style.left = x+'px'; h.style.top = y+'px';
+      h.style.animationDelay = (Math.random()*2)+'s';
+      h.addEventListener('click', ()=>{
+        popSpark(h); h.remove();
+        got++; $('#got').textContent = got;
+        $('#bar').style.width = (100*got/need)+'%';
+        if(got>=need){
+          clearInterval(heartTimer);
+          $('#toBalloon').disabled = false;
+        }
+      }, {once:true});
+      heartsArea.appendChild(h);
+      // gentle drift
+      const dx = (Math.random()*.6+ .2) * (Math.random()<.5? -1: 1);
+      const dy = (Math.random()*.6+ .2) * (Math.random()<.5? -1: 1);
+      let t=0; const drift = setInterval(()=>{ 
+        if(!h.isConnected) return clearInterval(drift);
+        t+=16; h.style.left = (x + Math.sin(t/900)*20 + dx*t/220)+'px';
+        h.style.top  = (y + Math.cos(t/1100)*14 + dy*t/260)+'px';
+      },16);
+      // auto remove after a while
+      setTimeout(()=>{ if(h.isConnected) h.remove(); }, 8000);
+    }, 380);
+  }
+  $('#toBalloon').addEventListener('click', ()=>{ show('balloon'); });
+
+  /* ---------- GAME 2: BALLOON ---------- */
+  const balloonEl = $('#balloonEl');
+  const puffBtn = $('#puffBtn');
+  const pressureTxt = $('#pressure');
+  let pressure = 0; // 0..100
+  let holdInterval, deflateInterval;
+
+  function setPressure(p){
+    pressure = Math.max(0, Math.min(100, p));
+    pressureTxt.textContent = Math.round(pressure)+'%';
+    const scale = 1 + pressure/90; // up to ~2.1
+    balloonEl.style.transform = `scale(${scale})`;
+    if(pressure>=100){
+      popBalloon();
+    }
+  }
+  function startInflate(){
+    clearInterval(deflateInterval);
+    if(holdInterval) return;
+    holdInterval = setInterval(()=> setPressure(pressure+2.8), 35);
+  }
+  function stopInflate(){
+    clearInterval(holdInterval); holdInterval = null;
+    clearInterval(deflateInterval);
+    deflateInterval = setInterval(()=>{
+      if(pressure<=0){ clearInterval(deflateInterval); return;}
+      setPressure(pressure-1.2);
+    }, 55);
+  }
+  function popBalloon(){
+    clearInterval(holdInterval); clearInterval(deflateInterval);
+    balloonEl.style.transition='transform .2s ease';
+    balloonEl.style.transform='scale(0.2)';
+    popHearts(balloonEl, 12);
+    puffBtn.disabled = true;
+    $('#toStars').disabled = false;
+    setTimeout(()=> balloonEl.style.visibility='hidden', 250);
+    pressureTxt.textContent = 'Patladı 🎉';
+  }
+  function popHearts(target, n=12){
+    const r = target.getBoundingClientRect();
+    const app = $('#app').getBoundingClientRect();
+    for(let i=0;i<n;i++){
+      const h = document.createElement('div');
+      h.className='burst-heart';
+      h.textContent = Math.random()>.5 ? '💖':'💘';
+      const x = (r.left - app.left) + r.width/2;
+      const y = (r.top - app.top) + r.height/2;
+      h.style.left = x + 'px';
+      h.style.top = y + 'px';
+      $('#app').appendChild(h);
+      const ang = Math.random()*Math.PI*2;
+      const dist = 50 + Math.random()*80;
+      const dx = Math.cos(ang)*dist;
+      const dy = Math.sin(ang)*dist;
+      h.animate([{transform:'translate(0,0) scale(1)'},{transform:`translate(${dx}px,${dy}px) scale(0.8)`}], {duration:600+Math.random()*300, easing:'ease-out'});
+      setTimeout(()=>{ h.classList.add('fade'); setTimeout(()=>h.remove(), 600); }, 400);
+    }
+  }
+
+  puffBtn.addEventListener('mousedown', startInflate);
+  puffBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); startInflate(); }, {passive:false});
+  ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=>puffBtn.addEventListener(ev, stopInflate));
+  // Spacebar support
+  let spaceHeld = false;
+  window.addEventListener('keydown', (e)=>{
+    if(e.code==='Space' && !spaceHeld){
+      spaceHeld = true; startInflate(); e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', (e)=>{
+    if(e.code==='Space'){ spaceHeld = false; stopInflate(); e.preventDefault(); }
+  });
+
+  $('#toStars').addEventListener('click', ()=>{ show('stars'); spawnStars(); });
+
+  /* ---------- GAME 3: LIGHT STARS ---------- */
+  const starArea = $('#starArea');
+  const starNeed = 8; let starGot = 0; let starTimer;
+  $('#starNeedCount').textContent = starNeed;
+  function spawnStars(){
+    starArea.innerHTML = '';
+    starGot = 0; $('#starGot').textContent = starGot; $('#starBar').style.width = '0%';
+    $('#revealBtn').disabled = true;
+    clearInterval(starTimer);
+    starTimer = setInterval(()=>{
+      if($$('.star', starArea).length > 6) return;
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.textContent = '✨';
+      const x = Math.random()*(starArea.clientWidth-40)+20;
+      const y = Math.random()*(starArea.clientHeight-80)+20;
+      s.style.left = x+'px';
+      s.style.top = y+'px';
+      s.addEventListener('click', ()=>{
+        s.classList.add('lit');
+        popSpark(s, 6);
+        setTimeout(()=>{ s.remove(); }, 200);
+        starGot++; $('#starGot').textContent = starGot;
+        $('#starBar').style.width = (100*starGot/starNeed)+'%';
+        if(starGot >= starNeed){
+          clearInterval(starTimer);
+          $('#revealBtn').disabled = false;
+          starArea.style.background = 'linear-gradient(180deg, #ffaf7b, #ffd166, #fff0b3)';
+        }
+      }, {once:true});
+      starArea.appendChild(s);
+      // gentle twinkle
+      const twinkle = setInterval(()=>{ 
+        if(!s.isConnected) return clearInterval(twinkle);
+        s.style.opacity = 0.6 + Math.random()*0.4;
+      }, 600);
+      // auto remove after a while
+      setTimeout(()=>{ if(s.isConnected) s.remove(); }, 6000);
+    }, 500);
+  }
+
+  $('#revealBtn').addEventListener('click', typeWriteEnding);
+
+  /* ---------- ENDING ---------- */
+  function typeWriteEnding(){
+    show('final');
+    const tw = $('#tw');
+    tw.innerHTML = '';
+    const text = "Günaydınnn yakışıklımmmm 💫\n\nBugün de kalbim seninlee; seni özledimm 🥰";
+    let i=0;
+    const cursor = document.createElement('span'); cursor.className='cursor'; cursor.textContent='|';
+    const line = document.createElement('span'); tw.append(line, cursor);
+    const timer = setInterval(()=>{
+      if(i>=text.length){ clearInterval(timer); popCelebration(); return; }
+      const ch = text[i++];
+      if(ch === '\n'){ line.appendChild(document.createElement('br')); }
+      else { line.append(ch); }
+    }, 35);
+  }
+
+  /* ---------- Sparks ---------- */
+  function popSpark(target, n=10){
+    const r = target.getBoundingClientRect();
+    const app = $('#app').getBoundingClientRect();
+    for(let i=0;i<n;i++){
+      const s = document.createElement('div'); s.className='spark';
+      const x = (r.left - app.left) + r.width/2, y=(r.top - app.top) + r.height/2;
+      s.style.left = x + 'px'; s.style.top = y + 'px';
+      $('#app').appendChild(s);
+      const ang = Math.random()*Math.PI*2, dist = 40 + Math.random()*70;
+      const dx = Math.cos(ang)*dist, dy = Math.sin(ang)*dist;
+      s.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}], {duration:500+Math.random()*300, easing:'ease-out'});
+      setTimeout(()=>{ s.classList.add('fade'); setTimeout(()=>s.remove(), 600); }, 400);
+    }
+  }
+  function popCelebration(){
+    for(let k=0;k<3;k++) setTimeout(()=> popSpark($('#tw'), 26), k*220);
+  }
+})();
+</script>
+</body>
+</html>
